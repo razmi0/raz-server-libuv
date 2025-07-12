@@ -1,5 +1,4 @@
--- Creating a simple setInterval wrapper
-local function setInterval(interval, callback)
+local function setInterval(callback, interval)
     local timer = require("luv").new_timer()
     timer:start(interval, interval, function()
         callback()
