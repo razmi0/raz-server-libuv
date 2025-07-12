@@ -1,0 +1,6 @@
+# IDE specific files
+.idea/
+.vscode/
+# Environment Files
+.env/
+.DS_Store

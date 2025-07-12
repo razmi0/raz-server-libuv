@@ -1,8 +1,7 @@
 ---@class Response
----@field new fun(client: table): Response Create a new Response instance
+---@field new fun(): Response Create a new Response instance
 ---@field msgFromCode fun(self : Response, code : number) : string Return the status message from a status code
 ---@field _current string The current built response string
----@field _client table The socket client instance
 ---@field protocol string The protocol of the response
 ---@field status number The HTTP status code
 ---@field statusMessage string The HTTP status message
@@ -13,7 +12,7 @@
 ---@field setBody fun(self: Response, body: string): Response Set the response body and update related headers
 ---@field addHeader fun(self: Response, key: string, value: string): Response Add or update a response header
 ---@field setContentType fun(self: Response, contentType: string): Response Set the Content-Type header
----@field send fun(self: Response): nil Send the response to the client
+---@field send fun(self: Response): nil Return the serialized raw response
 ---@field _build fun(self: Response): nil Build the complete HTTP response string
 
 
@@ -40,7 +39,6 @@ local STATUS_CODES = {
 -- especially usefull for the constructor
 local default_response = {
     _current = "",
-    _client = nil,
     protocol = "HTTP/1.1",
     status = 200,
     statusMessage = "OK",
@@ -55,9 +53,8 @@ local default_response = {
 }
 
 ---Constructor for the Response object
----@param client table The socket client instance
 ---@return Response
-function Response.new(client)
+function Response.new()
     local instance = setmetatable({}, Response)
     for key, value in pairs(default_response) do
         instance[key] = value
@@ -65,11 +62,6 @@ function Response.new(client)
     instance._headers = {}
     for key, value in pairs(default_response._headers) do
         instance._headers[key] = value
-    end
-    if client then
-        instance._client = client
-    else
-        error("Client failed to bind to response")
     end
     instance:_build()
     return instance
@@ -130,7 +122,7 @@ end
 --- Send the response to the client
 function Response:send()
     self:_build()
-    self._client:send(self._current)
+    return self._current
 end
 
 --- Build the complete HTTP response string
