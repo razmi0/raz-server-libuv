@@ -22,9 +22,9 @@ if (quietMode) {
 // Check for mandatory arguments
 if (args.length < 2) {
     // Updated Usage Message
-    console.error("Usage: node watcher.js <script-to-run.lua> <directory-to-watch> [host] [port] [--quiet]");
-    console.error("\nExample (default host/port): node watcher.js index.lua ./src");
-    console.error("Example (custom host/port): node watcher.js index.lua ./src 0.0.0.0 8080");
+    console.error("Usage: node w.js <script-to-run.lua> <directory-to-watch> [host] [port] [--quiet]");
+    console.error("\nExample (default host/port): node w.js index.lua ./src");
+    console.error("Example (custom host/port): node w.js index.lua ./src 0.0.0.0 8080");
     process.exit(1);
 }
 
