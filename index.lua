@@ -7,7 +7,7 @@ local uv = require("luv")
 
 local posts = {}
 
-app:use("*", logger())
+-- app:use("/", logger())
 app:post("/post", function(c)
     if not c.req.hasBody then return HTTP400(c) end
     local body = JSON.decode(c.req.body)
@@ -39,14 +39,14 @@ app:get("/post/:id", function(c)
     return c:json(post)
 end)
 
-app:get("/slow", function(c)
-    uv.timer_start(uv.new_timer(), 1000, 0, function()
-        return c:text("slow response")
-    end)
-end)
+-- app:get("/slow", function(c)
+--     uv.timer_start(uv.new_timer(), 1000, 0, function()
+--         return c:text("slow response")
+--     end)
+-- end)
 
-app:get("/fast", function(c)
-    return c:text("fast response")
+app:get("/", function(c)
+    return c:text("server is running")
 end)
 
 server.new():start(app, {
