@@ -5,4 +5,7 @@ function HTTP500(ctx)
     return ctx.res
 end
 
-return HTTP500
+local raw =
+"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 23\r\n\r\n500 Internal Server Error"
+
+return HTTP500, raw
