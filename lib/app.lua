@@ -1,4 +1,3 @@
-local inspect = require("inspect")
 local Request = require("lib.request")
 local Response = require("lib.response")
 local Context = require("lib.context")
