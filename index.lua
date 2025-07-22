@@ -56,6 +56,7 @@ end)
 -- end)
 
 app:get("/", function(c)
+    print(c.req:header("user-agent"))
     return c:text("server is running")
 end)
 

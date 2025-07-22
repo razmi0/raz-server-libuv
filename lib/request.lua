@@ -64,7 +64,7 @@ function Request:header(key)
     if not key then
         return self._headers
     end
-    return self._headers[key]
+    return self._headers[string.lower(key)]
 end
 
 --- Get a query value or all queries
@@ -116,20 +116,19 @@ function Request:_parse()
         end
 
 
-        -- Parse query string
         state = "headers"
+        for i = 2, #lines do
+            local key, value = lines[i]:match("^(.-):%s*(.*)")
+            if key and value then
+                self._headers[string.lower(key)] = value
+            end
+        end
+
+        -- Parse query string
         local path, query_string = url:match("([^?]+)%??(.*)")
         local queryTable = {}
         for key, value in query_string:gmatch("([^=]+)=([^&]*)&?") do
             queryTable[key] = value
-        end
-
-        -- Parse headers
-        for i = 2, #lines do
-            local key, value = lines[i]:match("^(.-):%s*(.*)")
-            if key and value then
-                self._headers[key] = value
-            end
         end
 
         self.method = method

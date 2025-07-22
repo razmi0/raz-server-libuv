@@ -1,3 +1,4 @@
+local inspect = require("inspect")
 ---@class Response
 ---@field new fun(): Response Create a new Response instance
 ---@field msgFromCode fun(self : Response, code : number) : string Return the status message from a status code
@@ -47,11 +48,11 @@ local default_response = {
     body = "",
     keepAlive = false,
     _headers = {
-        ["Content-Type"] = "application/json",
-        ["Content-Length"] = "0",
-        ["X-Powered-By"] = "Raz",
-        ["Date"] = os.date("%a, %d %b %Y %H:%M:%S GMT"),
-        ["Last-Modified"] = os.date("%a, %d %b %Y %H:%M:%S GMT"),
+        ["content-type"] = "application/json",
+        ["content-length"] = "0",
+        ["x-powered-by"] = "Raz",
+        ["date"] = os.date("%a, %d %b %Y %H:%M:%S GMT"),
+        ["last-modified"] = os.date("%a, %d %b %Y %H:%M:%S GMT"),
     }
 }
 
@@ -79,7 +80,7 @@ function Response:header(key)
     if not key then
         return self._headers
     end
-    return self._headers[key]
+    return self._headers[string.lower(key)]
 end
 
 ---- - Set the HTTP status code and message
@@ -99,20 +100,28 @@ end
 
 --- Set the response body and update related headers
 --- @param body string The response body content
+--- @param contentType? string The content type
 --- @return Response self The response instance for method chaining
-function Response:setBody(body)
+function Response:setBody(body, contentType)
     self.body = body
-    self._headers["Content-Length"] = #body
-    self._headers["Last-Modified"] = os.date("%a, %d %b %Y %H:%M:%S GMT")
+    self:addHeader("content-length", #body)
+    self:addHeader("last-modified", tostring(os.date("%a, %d %b %Y %H:%M:%S GMT")))
+    if contentType then
+        self:addHeader("content-type", contentType)
+    end
     return self
 end
 
 --- Add or update a response header
 --- @param key string The header key
---- @param value string The header value
+--- @param value string|number The header value
 --- @return Response self The response instance for method chaining
 function Response:addHeader(key, value)
-    self._headers[key] = value
+    local t_value = value
+    if type(value) == "number" then
+        t_value = tostring(t_value)
+    end
+    self._headers[string.lower(key)] = t_value
     return self
 end
 
@@ -120,7 +129,7 @@ end
 --- @param contentType string The content type (e.g., "application/json", "text/html")
 --- @return Response self The response instance for method chaining
 function Response:setContentType(contentType)
-    self._headers["Content-Type"] = contentType
+    self:addHeader("Content-Type", contentType)
     return self
 end
 
@@ -135,21 +144,39 @@ end
 --- In between, the response can be modified
 --- @private
 function Response:_build()
+    local function formatHeaderKey(key)
+        local letters = {}
+        local upperNext = false
+        for letter in key:gmatch(".") do
+            if upperNext then
+                letter = string.upper(letter)
+                upperNext = false
+            end
+            if letter == "-" then
+                upperNext = true
+            end
+            letters[#letters + 1] = letter
+        end
+        letters[1] = string.upper(letters[1])
+
+        return table.concat(letters)
+    end
+
     local heading = ("%s %d %s\r\n"):format(
         self.protocol,
         self.status,
         self.statusMessage
     )
-    local headers = ""
     if self.keepAlive then
         self:addHeader("Connection", "keep-alive")
     else
         self:addHeader("Connection", "close")
     end
 
+    local headers = ""
     for key, value in pairs(self._headers) do
         if value ~= nil then
-            headers = headers .. ("%s: %s\r\n"):format(key, value)
+            headers = headers .. ("%s: %s\r\n"):format(formatHeaderKey(key), value)
         end
     end
     self._current = heading .. headers .. "\r\n" .. self.body
