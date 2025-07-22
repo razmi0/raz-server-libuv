@@ -137,6 +137,7 @@ function Request:_parse()
         self.protocol = protocol
         self.body = body
         self._queries = queryTable
+        self.url = url
 
         local connection = self:header("Connection")
         if connection == "keep-alive" or (self.protocol == "HTTP/1.1" and connection ~= "close") then
@@ -163,16 +164,18 @@ function Request:_parse()
     end)
 
     if not ok then
+        print("Error parsing at " .. state .. " code : " .. result_or_err)
         local code = tonumber(result_or_err)
         if code then
             return { valid = false, errCode = code }
         else
-            print("Error parsing at " .. state .. " request: " .. result_or_err)
             return { valid = false, errCode = 400 } -- Unknown error fallback
         end
     end
 
     state = "done"
+
+    print(inspect(self))
 
     return { valid = true, errCode = 0 }
 end

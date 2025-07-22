@@ -4,10 +4,20 @@ local logger = require("lib/middleware/logger")
 local JSON = require("cjson")
 local HTTP400 = require("lib/http-exception/bad-request")
 local uv = require("luv")
+local static = require("lib.middleware.static")
 
 local posts = {}
 
--- app:use("/", logger())
+-- app:use("/*", logger())
+
+-- app:on("GET", { "/", "/:file{^.+%.%w+}" }, static(function(c)
+--     return {
+--         root = "public",
+--         path = c.req:param("file") or "index.html"
+--     }
+-- end)
+-- )
+
 app:post("/post", function(c)
     if not c.req.hasBody then return HTTP400(c) end
     local body = JSON.decode(c.req.body)
