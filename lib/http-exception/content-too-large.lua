@@ -5,4 +5,7 @@ function HTTP413(ctx)
     return ctx.res
 end
 
-return HTTP413
+local raw =
+"HTTP/1.1 413 Content Too Large\r\nContent-Type: text/plain\r\nContent-Length: 22\r\n\r\n413 Content Too Large\r\n"
+
+return HTTP413, raw

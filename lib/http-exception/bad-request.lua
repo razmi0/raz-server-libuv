@@ -5,4 +5,6 @@ function HTTP400(ctx)
     return ctx.res
 end
 
-return HTTP400
+local raw = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nContent-Length: 15\r\n\r\n400 Bad Request\r\n"
+
+return HTTP400, raw

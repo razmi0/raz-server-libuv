@@ -1,11 +1,5 @@
 # Features Not Handled by the Server
 
-## 4. Keep-Alive / Connection Persistence
-
-No parsing of Connection: keep-alive
-
-Closes the connection after each response
-
 ## 5. TLS/SSL (HTTPS)
 
 No support for TLS via uv_tls or any other means

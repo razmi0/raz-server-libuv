@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
-const chokidar = require("chokidar");
-const { spawn } = require("child_process");
-const path = require("path");
+import { watch } from "chokidar";
+import { spawn } from "child_process";
+import { resolve, dirname, basename, relative } from "path";
 // const os = require("os");
-const RUNTIME = "luajit";
 
 let refresh = 0;
 console.log("\x1B[2J\x1B[0f");
@@ -19,6 +18,12 @@ if (quietMode) {
     args.splice(quietIndex, 1); // Remove --quiet from args array for easier processing
 }
 
+let RUNTIME = "luajit";
+let isLua = args.some((arg) => arg.endsWith(".lua"));
+if (!isLua) {
+    RUNTIME = "node";
+}
+
 // Check for mandatory arguments
 if (args.length < 2) {
     // Updated Usage Message
@@ -29,8 +34,8 @@ if (args.length < 2) {
 }
 
 // --- Assign Arguments ---
-const scriptToRun = path.resolve(args[0]); // Mandatory: e.g., index.lua
-const directoryToWatch = path.resolve(args[1]); // Mandatory: e.g., ./src
+const scriptToRun = resolve(args[0]); // Mandatory: e.g., index.lua
+const directoryToWatch = resolve(args[1]); // Mandatory: e.g., ./src
 
 // Optional host and port with defaults
 const host = args[2] || "127.0.0.1"; // Default host if args[2] is not provided
@@ -51,8 +56,8 @@ function log(message) {
 }
 
 function startServer() {
-    const scriptDir = path.dirname(scriptToRun);
-    const scriptFilename = path.basename(scriptToRun);
+    const scriptDir = dirname(scriptToRun);
+    const scriptFilename = basename(scriptToRun);
 
     console.log(`(x${refresh})`);
 
@@ -89,7 +94,7 @@ function stopServer() {
     if (!childProcess) {
         return;
     }
-    const scriptFilename = path.basename(scriptToRun); // Get filename for logging
+    const scriptFilename = basename(scriptToRun); // Get filename for logging
     log(`Stopping process \`${scriptFilename}\` (PID: ${childProcess.pid})...`);
     childProcess.killed = true;
     const success = childProcess.kill("SIGTERM");
@@ -108,7 +113,7 @@ function restartServer() {
 }
 
 function handleFileChange(event, filePath) {
-    log(`Detected ${event}: ${path.relative(process.cwd(), filePath)}`);
+    log(`Detected ${event}: ${relative(process.cwd(), filePath)}`);
     if (restartTimeout) {
         clearTimeout(restartTimeout);
     }
@@ -126,7 +131,7 @@ log(`Default/Passed Host: ${host}`);
 log(`Default/Passed Port: ${port}`);
 if (quietMode) log("Quiet mode enabled.");
 
-const watcher = chokidar.watch(directoryToWatch, {
+const watcher = watch(directoryToWatch, {
     ignored: /(^|[\/\\])\../,
     persistent: true,
     ignoreInitial: true,

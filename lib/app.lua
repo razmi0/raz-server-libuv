@@ -12,7 +12,6 @@ local HTTP500 = require("lib.http-exception.internal-server-error")
 
 ---@class App
 ---@field _router Router
----@field _config? AppConfig
 ---@field new fun():App
 ---@field use fun(self: App, middleware: function): App
 ---@field get fun(self: App, path: string, callback: function): App
@@ -25,11 +24,9 @@ local HTTP500 = require("lib.http-exception.internal-server-error")
 local App = {}
 App.__index = App
 
----@param config? AppConfig
-function App.new(config)
+function App.new()
     local instance = setmetatable({}, App)
     instance._router = Router.new()
-    instance._config = config or {}
     return instance
 end
 
@@ -82,24 +79,11 @@ function App:on(methods, paths, ...)
     end
 end
 
----@param chunks string The request buffer
-function App:_run(chunks)
-    local req = Request.new(chunks, {
-        maxBodySize = self._maxBodySize,
-    })
-    local res = Response.new()
+---@param req Request The request object
+---@param res Response The response object
+function App:_run(req, res)
     local ctx = Context.new(req, res)
-
-    if not req or not res or not ctx then ctx._err_handler = HTTP500 end
-    local reqParsingResult = req:_parse()
-    if reqParsingResult.valid == false then
-        local code = reqParsingResult.errCode
-        if code == 413 then
-            return HTTP413(ctx):send()
-        else
-            return HTTP400(ctx):send()
-        end
-    end
+    if not ctx then ctx._err_handler = HTTP500 end
 
     local mws, params, match = self._router:match(req.method, req.path)
     req._params = params

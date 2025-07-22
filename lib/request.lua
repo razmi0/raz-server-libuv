@@ -93,26 +93,31 @@ end
 ---@private
 ---@return RequestParseResult
 function Request:_parse()
+    ---@vararg "body_split" | "request_line" | "headers" | "body" | "done"
+    local state = ""
+
     local ok, result_or_err = pcall(function()
         -- Split head/body
+        state = "body_split"
         local head, body = self._chunks:match("^(.-)\r\n\r\n(.*)")
         if not head or not body then
             error(400) -- Malformed request
         end
 
-        -- Split head into lines
         local lines = {}
         for line in head:gmatch("[^\r\n]+") do
             lines[#lines + 1] = line
         end
 
-        -- Extract request line
+        state = "request_line"
         local method, url, protocol = lines[1]:match("^(%S+)%s+(%S+)%s+(HTTP/%d%.%d)")
         if not method or not url or not protocol then
             error(400)
         end
 
+
         -- Parse query string
+        state = "headers"
         local path, query_string = url:match("([^?]+)%??(.*)")
         local queryTable = {}
         for key, value in query_string:gmatch("([^=]+)=([^&]*)&?") do
@@ -133,7 +138,13 @@ function Request:_parse()
         self.body = body
         self._queries = queryTable
 
+        local connection = self:header("Connection")
+        if connection == "keep-alive" or (self.protocol == "HTTP/1.1" and connection ~= "close") then
+            self.keepAlive = true
+        end
+
         -- Body parsing with Content-Length
+        state = "body"
         local contentLength = tonumber(self._headers["Content-Length"])
         if contentLength and contentLength > 0 then
             if contentLength > self.maxBodySize then
@@ -156,9 +167,12 @@ function Request:_parse()
         if code then
             return { valid = false, errCode = code }
         else
+            print("Error parsing at " .. state .. " request: " .. result_or_err)
             return { valid = false, errCode = 400 } -- Unknown error fallback
         end
     end
+
+    state = "done"
 
     return { valid = true, errCode = 0 }
 end

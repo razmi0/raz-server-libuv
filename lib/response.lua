@@ -2,6 +2,8 @@
 ---@field new fun(): Response Create a new Response instance
 ---@field msgFromCode fun(self : Response, code : number) : string Return the status message from a status code
 ---@field _current string The current built response string
+---@field _req Request|nil The request object associated with this response
+---@field keepAlive boolean Whether to keep the connection alive
 ---@field protocol string The protocol of the response
 ---@field status number The HTTP status code
 ---@field statusMessage string The HTTP status message
@@ -43,6 +45,7 @@ local default_response = {
     status = 200,
     statusMessage = "OK",
     body = "",
+    keepAlive = false,
     _headers = {
         ["Content-Type"] = "application/json",
         ["Content-Length"] = "0",
@@ -53,9 +56,11 @@ local default_response = {
 }
 
 ---Constructor for the Response object
+---@param req? Request The request object
 ---@return Response
-function Response.new()
+function Response.new(req)
     local instance = setmetatable({}, Response)
+    instance._req = req
     for key, value in pairs(default_response) do
         instance[key] = value
     end
@@ -136,6 +141,12 @@ function Response:_build()
         self.statusMessage
     )
     local headers = ""
+    if self.keepAlive then
+        self:addHeader("Connection", "keep-alive")
+    else
+        self:addHeader("Connection", "close")
+    end
+
     for key, value in pairs(self._headers) do
         if value ~= nil then
             headers = headers .. ("%s: %s\r\n"):format(key, value)
